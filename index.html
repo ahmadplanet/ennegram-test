@@ -1,0 +1,312 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enneagram Test - Discover Your Types</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        body { font-family: 'Inter', system_ui, sans-serif; }
+        input[type="range"] {
+            accent-color: #6366f1;
+            height: 12px;
+            border-radius: 9999px;
+        }
+        .value-display {
+            font-size: 2rem;
+            font-weight: 700;
+            min-width: 80px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen">
+
+<div class="max-w-4xl mx-auto p-8">
+
+    <div class="text-center mb-12">
+        <h1 class="text-5xl font-bold">Enneagram Test</h1>
+        <p class="mt-4 text-xl text-slate-600 dark:text-slate-400">108 statements • Rate how well each describes you (0% = not at all, 100% = very much)</p>
+        <p class="text-sm text-slate-500 mt-6">Results show all 9 types ranked ascending (least to most)</p>
+    </div>
+
+    <div id="questions-container" class="space-y-12"></div>
+
+    <div class="flex justify-center mt-20">
+        <button onclick="submitTest()" 
+                class="px-20 py-8 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-3xl rounded-3xl shadow-2xl transition-all">
+            Finish Test &amp; See My Enneagram Types
+        </button>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="results-screen" class="hidden">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-14">
+
+            <div class="text-center mb-12">
+                <h2 class="text-5xl font-bold">Your Enneagram Types</h2>
+                <p class="text-slate-500 dark:text-slate-400 mt-4">Ranked ascending (least to most) with percentages</p>
+            </div>
+
+            <div id="results-list" class="space-y-8"></div>
+
+            <div class="flex justify-center gap-6 mt-16">
+                <button onclick="copyResults()" class="px-12 py-6 bg-slate-100 dark:bg-slate-800 rounded-3xl font-medium text-xl">📋 Copy Results</button>
+                <button onclick="saveAsImage()" class="px-12 py-6 bg-indigo-600 text-white rounded-3xl font-medium text-xl">📸 Save Image</button>
+            </div>
+
+            <div class="text-center mt-12">
+                <button onclick="restartTest()" class="underline text-slate-500">Retake Test</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 108 statements (12 per type)
+const statements = {
+    1: [
+        "I have high standards for myself and others.",
+        "I strive to be perfect and correct in everything I do.",
+        "I get frustrated when things are not done properly.",
+        "I believe there is a right way to do things.",
+        "I am organized and disciplined.",
+        "I often criticize myself for not being good enough.",
+        "I value integrity and doing what is right.",
+        "I work hard to improve myself and fix mistakes.",
+        "I can be very self-critical.",
+        "I like things to be orderly and well-structured.",
+        "I feel responsible for making sure things are done correctly.",
+        "I have a strong sense of duty and responsibility."
+    ],
+    2: [
+        "I enjoy helping and supporting other people.",
+        "I like to make others feel loved and cared for.",
+        "I am very attentive to the needs of those around me.",
+        "I feel good when people appreciate what I do for them.",
+        "I sometimes put others' needs before my own.",
+        "I am warm, friendly, and empathetic.",
+        "I want to be needed by the people I care about.",
+        "I often go out of my way to make someone feel better.",
+        "I find it hard to say no when someone asks for help.",
+        "I am generous with my time and energy.",
+        "I like to be seen as kind and giving.",
+        "I feel happiest when I am making a positive difference for someone."
+    ],
+    3: [
+        "I am ambitious and goal-oriented.",
+        "I like to achieve and be successful.",
+        "I adapt easily to different situations and people.",
+        "I work hard to be the best at what I do.",
+        "I care about my image and how others see me.",
+        "I am energetic and driven.",
+        "I enjoy being recognized for my accomplishments.",
+        "I am efficient and get things done quickly.",
+        "I like to be productive and useful.",
+        "I can be competitive when I want to win.",
+        "I present myself in the best possible light.",
+        "I feel motivated by success and recognition."
+    ],
+    4: [
+        "I feel things very deeply and intensely.",
+        "I am unique and different from most people.",
+        "I long for deep, meaningful connections.",
+        "I sometimes feel misunderstood or different.",
+        "I am creative and expressive.",
+        "I have a rich inner emotional world.",
+        "I value authenticity and being true to myself.",
+        "I can be very sensitive to criticism.",
+        "I often feel a sense of longing or melancholy.",
+        "I am drawn to beauty and meaning.",
+        "I want to be seen for who I really am.",
+        "I have a strong sense of identity and individuality."
+    ],
+    5: [
+        "I enjoy learning and understanding how things work.",
+        "I need time alone to think and recharge.",
+        "I am observant and analytical.",
+        "I like to keep my options open and avoid being overwhelmed.",
+        "I am independent and self-sufficient.",
+        "I value knowledge and competence.",
+        "I can be very private about my thoughts and feelings.",
+        "I prefer to observe rather than participate sometimes.",
+        "I am good at solving complex problems.",
+        "I guard my energy and time carefully.",
+        "I like to have a clear understanding before acting.",
+        "I am curious and enjoy exploring ideas."
+    ],
+    6: [
+        "I value loyalty and trustworthiness.",
+        "I am responsible and committed.",
+        "I like to be prepared for possible problems.",
+        "I am cautious and think about potential risks.",
+        "I am dedicated to the people and groups I belong to.",
+        "I can be anxious about the future.",
+        "I seek guidance and support from those I trust.",
+        "I am hardworking and reliable.",
+        "I like to know where I stand with people.",
+        "I am good at spotting problems before they happen.",
+        "I value security and stability.",
+        "I am committed to doing what is expected of me."
+    ],
+    7: [
+        "I am optimistic and enthusiastic.",
+        "I love new experiences and adventures.",
+        "I try to stay positive and avoid pain.",
+        "I have many interests and ideas.",
+        "I enjoy planning fun things and possibilities.",
+        "I am spontaneous and flexible.",
+        "I dislike feeling trapped or limited.",
+        "I am playful and have a good sense of humor.",
+        "I look for the bright side in difficult situations.",
+        "I get excited about future possibilities.",
+        "I like to keep my options open.",
+        "I am energetic and fun-loving."
+    ],
+    8: [
+        "I am strong and assertive.",
+        "I stand up for myself and others.",
+        "I like to be in control of my own life.",
+        "I am direct and straightforward.",
+        "I protect the people I care about.",
+        "I have a lot of energy and intensity.",
+        "I dislike weakness in myself or others.",
+        "I am decisive and take charge.",
+        "I value justice and fairness.",
+        "I can be confrontational when necessary.",
+        "I am independent and self-reliant.",
+        "I want to make a big impact."
+    ],
+    9: [
+        "I am easygoing and peaceful.",
+        "I avoid conflict and keep things harmonious.",
+        "I like to go with the flow.",
+        "I am patient and accepting of others.",
+        "I sometimes lose track of my own needs.",
+        "I am supportive and non-judgmental.",
+        "I prefer a calm and stable environment.",
+        "I can be very adaptable.",
+        "I value inner peace and contentment.",
+        "I don't like to rock the boat.",
+        "I am good at seeing all sides of a situation.",
+        "I like to keep things simple and comfortable."
+    ]
+};
+
+let userAnswers = new Array(108).fill(50);
+
+function renderQuestions() {
+    const container = document.getElementById('questions-container');
+    let html = '';
+
+    let qNum = 1;
+    Object.keys(statements).forEach(type => {
+        statements[type].forEach(statement => {
+            const id = `q${qNum-1}`;
+            html += `
+                <div class="question-card bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-10">
+                    <div class="flex items-start gap-6 mb-8">
+                        <div class="flex-shrink-0 w-10 h-10 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-2xl flex items-center justify-center font-bold text-xl">${qNum}</div>
+                        <div class="flex-1 text-slate-700 dark:text-slate-200 text-lg leading-relaxed">${statement}</div>
+                    </div>
+                    
+                    <div class="flex flex-col items-center">
+                        <input type="range" id="${id}" min="0" max="100" value="50" 
+                               oninput="updateValue(this, ${qNum-1})" class="w-full mb-4">
+                        <div class="flex justify-between w-full text-sm text-slate-400">
+                            <span>0% - Not at all</span>
+                            <span id="${id}-val" class="font-bold text-indigo-600 dark:text-indigo-400 text-2xl">50%</span>
+                            <span>100% - Very much</span>
+                        </div>
+                    </div>
+                </div>`;
+            qNum++;
+        });
+    });
+
+    container.innerHTML = html;
+}
+
+function updateValue(slider, index) {
+    document.getElementById(slider.id + '-val').textContent = slider.value + '%';
+    userAnswers[index] = parseInt(slider.value);
+}
+
+function submitTest() {
+    document.getElementById('questions-container').classList.add('hidden');
+    document.querySelector('button[onclick="submitTest()"]').classList.add('hidden');
+    document.getElementById('results-screen').classList.remove('hidden');
+    showResults();
+}
+
+function calculateScores() {
+    const scores = {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0};
+    let qIndex = 0;
+
+    Object.keys(statements).forEach(type => {
+        statements[type].forEach(() => {
+            scores[type] += userAnswers[qIndex];
+            qIndex++;
+        });
+    });
+
+    // Average percentage (max 1200 per type)
+    Object.keys(scores).forEach(type => {
+        scores[type] = Math.round((scores[type] / 1200) * 100);
+    });
+
+    return scores;
+}
+
+function showResults() {
+    const scores = calculateScores();
+    const sortedTypes = Object.keys(scores).sort((a, b) => scores[a] - scores[b]);
+
+    const container = document.getElementById('function-list'); // renamed for clarity
+    container.innerHTML = '';
+
+    sortedTypes.forEach(type => {
+        const perc = scores[type];
+        const div = document.createElement('div');
+        div.className = "flex items-center gap-8 p-8 bg-slate-50 dark:bg-slate-800 rounded-3xl";
+        div.innerHTML = `
+            <div class="w-20 text-5xl font-bold text-indigo-600">Type ${type}</div>
+            <div class="flex-1 bg-slate-200 dark:bg-slate-700 rounded-full h-6 overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-indigo-500 to-violet-500" style="width: ${perc}%"></div>
+            </div>
+            <div class="text-right font-bold text-6xl">${perc}<span class="text-2xl align-super font-normal">%</span></div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function copyResults() {
+    const scores = calculateScores();
+    const sorted = Object.keys(scores).sort((a, b) => scores[a] - scores[b]);
+    let text = "My Enneagram Types (ascending - least to most):\n\n";
+    sorted.forEach(t => text += `Type ${t}: ${scores[t]}%\n`);
+    navigator.clipboard.writeText(text).then(() => alert("Results copied!"));
+}
+
+function saveAsImage() {
+    const resultsDiv = document.getElementById('results-screen');
+    html2canvas(resultsDiv, {scale: 2}).then(canvas => {
+        const a = document.createElement('a');
+        a.download = 'enneagram-results.png';
+        a.href = canvas.toDataURL();
+        a.click();
+    });
+}
+
+function restartTest() {
+    location.reload();
+}
+
+// Initialize
+renderQuestions();
+</script>
+
+</body>
+</html>
